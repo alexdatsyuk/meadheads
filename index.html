@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Share Cart — Madheads Coffee</title>
+  <meta name="description" content="Share your Madheads Coffee cart with friends. Add items, generate a link, and let others import your order.">
+  <meta name="theme-color" content="#0a0a0a">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Share Cart — Madheads Coffee">
+  <meta property="og:description" content="Share your Madheads Coffee cart with friends.">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --fg: #e8e8e8;
+      --muted: #8a8a8a;
+      --accent: #fff;
+      --mono: 'JetBrains Mono', monospace;
+      --focus: #4a9eff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+
+    /* Focus styles for keyboard navigation */
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 380px;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .page { animation: none; }
+      .bookmarklet { transition: none; }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    h1 {
+      font-size: 0.6875rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .bookmarklet {
+      display: block;
+      width: 100%;
+      background: var(--fg);
+      color: var(--bg);
+      padding: 1.25rem 2rem;
+      text-align: center;
+      text-decoration: none;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: grab;
+      transition: all 0.2s ease;
+    }
+
+    .bookmarklet:hover {
+      background: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 4px 24px rgba(255,255,255,0.1);
+      transform: translateY(-1px);
+    }
+
+    .bookmarklet:active {
+      cursor: grabbing;
+      transform: translateY(0);
+    }
+
+    .hint {
+      font-size: 0.6875rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .steps {
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+    }
+
+    .steps h2 {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 1rem;
+      align-items: baseline;
+      padding: 0.75rem 0;
+    }
+
+    .step-tag {
+      flex-shrink: 0;
+      padding: 0.25rem 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.625rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .step-text {
+      font-size: 0.75rem;
+      color: #a0a0a0;
+      letter-spacing: 0.02em;
+      line-height: 1.6;
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.625rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: #a0a0a0;
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--fg);
+      border-color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>Madheads Coffee</h1>
+    </header>
+
+    <div class="action">
+      <a class="bookmarklet" href="javascript:(async()=>{const A='/api',C='cart.change',N=String.fromCharCode(10),call=(s,n)=>fetch(A,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:C,params:{slug:s,count:n,options:{}}})}),H=location.hash.slice(1);if(H.startsWith('cart=')){const cur=await call('_dummy_',0).then(r=>r.json()),cart=new Map((cur.data||[]).map(i=>[i.slug,i.count])),shared=JSON.parse(atob(H.slice(5))),lines=[];for(const[s,c,name]of shared){const nc=(cart.get(s)||0)+c;await call(s,nc);lines.push(c+'× '+(name||s))}alert('Added to cart:'+N+N+lines.join(N));location.href='/checkout'}else{const j=await call('_dummy_',0).then(r=>r.json());if(!j.data||!j.data.length){alert('Cart is empty!');return}const link=location.origin+'/#cart='+btoa(JSON.stringify(j.data.map(i=>[i.slug,i.count,i.product?.label||i.slug])));await navigator.clipboard.writeText(link);alert('Link copied!'+N+N+link)}})();" aria-label="Share Cart bookmarklet - drag this to your bookmarks bar">Share Cart</a>
+      <p class="hint">Drag to bookmarks bar</p>
+    </div>
+
+    <section class="steps" aria-labelledby="instructions-heading">
+      <h2 id="instructions-heading">Instructions</h2>
+      <div class="step">
+        <span class="step-tag" aria-hidden="true">Share</span>
+        <p class="step-text">Add items → click bookmarklet → send link</p>
+      </div>
+      <div class="step">
+        <span class="step-tag" aria-hidden="true">Import</span>
+        <p class="step-text">Open link → click bookmarklet → done</p>
+      </div>
+    </section>
+
+    <footer>
+      For <a href="https://madheadscoffee.com" target="_blank" rel="noopener noreferrer">madheadscoffee.com</a>
+    </footer>
+  </main>
+</body>
+</html>
