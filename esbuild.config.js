@@ -10,7 +10,9 @@ const result = await build({
   write: false,
 });
 
-const minified = result.outputFiles[0].text.trim();
+// Replace literal newlines with \\n so the bookmarklet survives HTML attribute parsing.
+// Browsers normalize literal newlines inside href="" to spaces, breaking template literals.
+const minified = result.outputFiles[0].text.trim().replace(/\n/g, '\\n');
 const bookmarkletHref = `javascript:${minified}`;
 
 const html = readFileSync('index.html', 'utf8');

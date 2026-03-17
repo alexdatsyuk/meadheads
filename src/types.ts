@@ -35,3 +35,14 @@ export interface CartResponse {
  * Prices are never included — the import side fetches live prices from the API.
  */
 export type ShareTuple = [slug: string, count: number, label: string];
+
+export interface PersonOrderItem {
+  slug: string;
+  count: number;
+  name: string;
+}
+
+export interface PersonOrder {
+  name: string;
+  items: PersonOrderItem[];
+}

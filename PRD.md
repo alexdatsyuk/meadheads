@@ -8,8 +8,8 @@ The Madheads team orders coffee together from [madheadscoffee.com](https://madhe
 
 A browser bookmarklet with two modes:
 
-- **Share**: reads your cart, copies a share link with encoded items to clipboard, shows an itemized price report.
-- **Import**: opens a share link, adds items to your existing cart (merging quantities), shows a price report, redirects to checkout.
+- **Share**: reads your cart, copies a share link with encoded items to clipboard, shows a plain item list.
+- **Import**: opens a share link, adds items to your existing cart (merging quantities), assigns a random name to the person, tracks each person's order in `sessionStorage`, shows a multi-person price report with dual pricing (retail vs wholesale at 16+ packs), redirects to checkout.
 
 Hosted as a static landing page on GitHub Pages. Zero backend. Runs entirely client-side on the Horoshop domain.
 
@@ -36,7 +36,7 @@ POST /api
 
 - Sets `count` for a product `slug`, returns full cart state.
 - Read-only trick: call with a nonexistent slug and `count: 0`.
-- Response: `{ ok: true, data: CartItem[] }` — each item has `slug`, `count`, `variant.price_retail`, `product.label`.
+- Response: `{ ok: true, data: CartItem[] }` — each item has `slug`, `count`, `variant.price_retail`, `variant.price_wholesale`, `product.label`.
 
 ## Technical stack
 
@@ -58,9 +58,9 @@ POST /api
 index.html          Landing page with bookmarklet drag target (href is a build artifact)
 src/
   types.ts          Horoshop API TypeScript interfaces
-  cart.ts           Pure functions — formatting, reporting, encoding/decoding share links
-  cart.test.ts      Unit tests (20 tests covering all pure functions)
-  bookmarklet.ts    Browser entry point — thin glue over cart.ts (fetch, alert, clipboard)
+  cart.ts           Pure functions — dual pricing, per-person reporting, encoding/decoding share links
+  cart.test.ts      Unit tests (29 tests covering all pure functions)
+  bookmarklet.ts    Browser entry point — thin glue over cart.ts (fetch, alert, clipboard, sessionStorage)
 esbuild.config.js   Bundles src/bookmarklet.ts → minified IIFE, injects into index.html
 tsconfig.json       TypeScript config (strict, noEmit, erasableSyntaxOnly)
 biome.json          Linter and formatter config
@@ -72,6 +72,8 @@ package.json        Scripts: test, build, lint, format
 
 - **Pure functions in `cart.ts`**: all logic is testable without a browser. `bookmarklet.ts` is just glue.
 - **No framework**: a single static page with no client interactivity doesn't need one.
+- **Dual pricing**: orders with 16+ total packs automatically show wholesale prices, with a savings line. Below threshold, a hint shows how many more packs are needed.
+- **Per-person tracking**: each import assigns a random Ubuntu-style name (e.g. "Clunky Cougar") and stores the order in `sessionStorage`. The report accumulates across imports within the same browser session.
 - **Prices from API only**: share links carry no prices — the import side always fetches live prices, keeping links short and data fresh.
 - **Single source of truth**: one copy of each function, bundled by esbuild. No code duplication.
 

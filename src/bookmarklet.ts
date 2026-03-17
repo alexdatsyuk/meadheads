@@ -2,34 +2,48 @@
  * Bookmarklet entry point — runs on madheadscoffee.com.
  *
  * Two modes:
- *   SHARE  — no #cart hash → read cart, copy share link, show price report
- *   IMPORT — #cart=... in URL → add items to cart, show price report, go to checkout
+ *   SHARE  — no #cart hash → read cart, copy share link, show item list
+ *   IMPORT — #cart=... in URL → add items to cart, show multi-person report, go to checkout
  */
 
 import {
-  buildReport,
+  buildItemList,
+  buildOrderReport,
   decodeShareLink,
   encodeShareLink,
   extractShareData,
-  formatPrice,
+  generateRandomName,
   mergeQuantities,
-  resolvePrice,
 } from './cart.ts';
-import type { CartResponse } from './types.ts';
+import type { CartResponse, PersonOrder } from './types.ts';
 
 const API_PATH = '/api';
 const API_METHOD = 'cart.change';
-const NL = '\n';
+const STORAGE_KEY = 'meadheads-orders';
 
-function cartCall(slug: string, count: number): Promise<CartResponse> {
-  return fetch(API_PATH, {
+async function cartCall(slug: string, count: number): Promise<CartResponse> {
+  const r = await fetch(API_PATH, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       method: API_METHOD,
       params: { slug, count, options: {} },
     }),
-  }).then((r) => r.json());
+  });
+  return r.json();
+}
+
+function loadOrders(): PersonOrder[] {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOrders(orders: PersonOrder[]): void {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
 }
 
 (async () => {
@@ -44,28 +58,28 @@ function cartCall(slug: string, count: number): Promise<CartResponse> {
       (currentCart.data || []).map((item) => [item.slug, item.count] as const),
     );
 
-    const reportItems = [];
-
-    for (const [slug, count, name] of sharedItems) {
+    for (const [slug, count] of sharedItems) {
       const newCount = mergeQuantities(existingQty, slug, count);
-      const response = await cartCall(slug, newCount);
-      const price = resolvePrice(response.data || [], slug);
-
-      reportItems.push({ count, name: name || slug, price });
+      await cartCall(slug, newCount);
     }
 
-    const { lines, total } = buildReport(reportItems);
+    // Final cart read — get complete state with both price tiers
+    const finalCart = await cartCall('_dummy_', 0);
 
-    alert(
-      'Added to cart:' +
-        NL +
-        NL +
-        lines.join(NL) +
-        NL +
-        NL +
-        'Total: ' +
-        formatPrice(total),
-    );
+    const name = generateRandomName();
+    const orders = loadOrders();
+    orders.push({
+      name,
+      items: sharedItems.map(([slug, count, label]) => ({
+        slug,
+        count,
+        name: label || slug,
+      })),
+    });
+    saveOrders(orders);
+
+    const report = buildOrderReport(orders, finalCart.data || []);
+    alert(`Added to cart:\n\n${report}`);
     location.href = '/checkout';
   } else {
     // ── SHARE MODE ────────────────────────────────────────────────
@@ -77,26 +91,10 @@ function cartCall(slug: string, count: number): Promise<CartResponse> {
     }
 
     const items = extractShareData(cart.data);
-    const reportItems = cart.data.map((item) => ({
-      count: item.count,
-      name: item.product?.label || item.slug,
-      price: item.variant?.price_retail || 0,
-    }));
-
-    const { lines, total } = buildReport(reportItems);
     const link = encodeShareLink(location.origin, items);
 
     await navigator.clipboard.writeText(link);
 
-    alert(
-      'Link copied!' +
-        NL +
-        NL +
-        lines.join(NL) +
-        NL +
-        NL +
-        'Total: ' +
-        formatPrice(total),
-    );
+    alert(`Link copied!\n\n${buildItemList(items)}`);
   }
 })();
