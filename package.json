@@ -1,0 +1,26 @@
+{
+  "name": "meadheads",
+  "version": "1.0.0",
+  "description": "Share your [Madheads Coffee](https://madheadscoffee.com) shopping cart with friends.",
+  "scripts": {
+    "test": "node --test",
+    "build": "node esbuild.config.js",
+    "lint": "biome check .",
+    "format": "biome check --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexdatsyuk/meadheads.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/alexdatsyuk/meadheads/issues"
+  },
+  "homepage": "https://github.com/alexdatsyuk/meadheads#readme",
+  "devDependencies": {
+    "esbuild": "^0.27.4"
+  }
+}
